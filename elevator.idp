@@ -68,7 +68,8 @@ Theory T_fixed : V_student {
 
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
-Theory T_student: V_student {
+Theory T_student: V_student {    
+    ! f[Floor]: ~UnansweredRequest(MAX, f). 
     
     // In the first time step the elevator is at the bottom floor
     I_ElPosition(MIN).
@@ -101,7 +102,7 @@ Theory T_student: V_student {
     // UnansweredRequest causes
     {
         ! t[Time] f[Floor]: C_UnansweredRequest(t, f) <- MakeRequest(t, f) & ~UnansweredRequest(t, f).
-        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- ElDoorState(t) = Open & UnansweredRequest(t, ElPosition(t)).
+        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- true.
     }
     
     // Direction inertia
@@ -127,8 +128,11 @@ Theory T_student: V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
+//    explainunsat(CompleteTheory, S1)
+    
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
     model = onemodel(CompleteTheory, S1)
+    
     
     // Printing model 
     print(model)

@@ -69,10 +69,14 @@ Theory T_fixed : V_student {
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
 Theory T_student: V_student {    
+    // Temp: in the end all requests are answered.
     ! f[Floor]: ~UnansweredRequest(MAX, f). 
     
     // In the first time step the elevator is at the bottom floor
     I_ElPosition(MIN).
+    
+    // In the first time step the door is closed
+    I_ElDoorState(Closed).
     
     // In the first time step there can be no unanswered requests.
     ! f[Floor]: ~I_UnansweredRequest(f).
@@ -91,6 +95,21 @@ Theory T_student: V_student {
         
         ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- Move(t).
     }
+    
+    // ElDoorState inertia.
+    {
+        ! ds[DoorState]: ElDoorState(Start) = ds <- I_ElDoorState(ds).
+        ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- C_ElDoorState(t, ds).
+        ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- ElDoorState(t) = ds & ~Cn_ElDoorState(t, ds).
+    }
+    
+    // DoorState causes
+    {
+        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- ChangeDoorState(t) & ElDoorState(t) = Closed.
+        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- ChangeDoorState(t) & ElDoorState(t) = Open.
+        
+        ! t[Time] f[Floor] ds[DoorState]: Cn_ElDoorState(t, ds) <- ChangeDoorState(t).
+	}
     
     // UnansweredRequest inertia
     {
@@ -120,6 +139,8 @@ Theory T_student: V_student {
         ! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f < ElPosition(t).
         ! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f > ElPosition(t).
     }
+    
+    ! t[Time]: Move(t) => ElDoorState(t) = Closed.
 }
 
 

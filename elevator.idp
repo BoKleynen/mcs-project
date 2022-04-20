@@ -74,24 +74,44 @@ Theory T_student: V_student {
     // The elevator can't move through the roof
     ! t[Time]: Move(t, Up) => ElPosition(t) ~= MAX.
     
-    I_ElPosition(0).
+    // In the first time step the elevator is at the bottom floor
+    I_ElPosition(MIN).
     
+    // In the first time step the doors should be closed.
     I_ElDoorState(Closed).
     
     
     // ElPosition inertia.
     {
-        ! f[Floor]: ElPosition(Start) = f <- I_ElPosition(f). // TODO: this isn't actually specified in the assignment.
+        ! f[Floor]: ElPosition(Start) = f <- I_ElPosition(f).
         ! t[Time] f[Floor]: ElPosition(Next(t)) = f <- C_ElPosition(t, f).
         ! t[Time] f[Floor]: ElPosition(Next(t)) = f <- ElPosition(t) = f & ~Cn_ElPosition(t, f).
     }
     
+    // Position causes
+    {
+        ! t[Time] f[Floor]: C_ElPosition(t, f+1) <- Move(t, Up) & ElPosition(t) = f.
+        ! t[Time] f[Floor]: C_ElPosition(t, f-1) <- Move(t, Up) & ElPosition(t) = f.
+        
+        ! t[Time] f[Floor] dir[Direction]: Cn_ElPosition(t, f) <- Move(t, dir).
+    }
+    
     // ElDoorState inertia.
     {
-        // In the first time step the doors should be closed.
         ! ds[DoorState]: ElDoorState(Start) = ds <- I_ElDoorState(ds).
         ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- C_ElDoorState(t, ds).
         ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- ElDoorState(t) = ds & ~Cn_ElDoorState(t, ds).
+    }
+    
+    // DoorState causes
+    {
+        // Open the doors when the elevator is at a floor where there is an unanswered request.
+        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- ElPosition(t) = f & UnansweredRequest(t, f).
+        // Close the door iff it is open
+        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- ElDoorState(t) = Open.
+        
+        ! t[Time] f[Floor]: Cn_ElDoorState(t, Open) <- C_ElDoorState(t, Closed).
+        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- Cn_ElDoorState(t, Closed).
     }
     
     // UnansweredRequest inertia

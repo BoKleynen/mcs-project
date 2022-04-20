@@ -154,10 +154,10 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-        ! t[Time] currentFloor[Floor]: C_Direction(t, Up) <- ? f[Floor]: ElPosition(t) = currentFloor & UnansweredRequest(t, f) & f >= currentFloor.
+        ! t[Time]: C_Direction(t, Up) <- ? f[Floor]: UnansweredRequest(t, f) & f >= ElPosition(t).
         
-        ! t[Time] currentFloor[Floor]: Cn_Direction(t, Up) <- ! f[Floor]: ElPosition(t) = currentFloor & UnansweredRequest(t, f) => f < currentFloor.
-        ! t[Time] currentFloor[Floor]: Cn_Direction(t, Down) <- ! f[Floor]: ElPosition(t) = currentFloor & UnansweredRequest(t, f) => f > currentFloor.
+        ! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f < ElPosition(t).
+        ! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f > ElPosition(t).
     }
 }
 

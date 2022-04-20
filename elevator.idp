@@ -1,6 +1,6 @@
-// First name: <your first name>
-// Last name: <your last name>
-// Student number: <your student number>
+// First name: Bo
+// Last name: Kleynen
+// Student number: r0624034
 
 
 // FIXED VOCABULARY
@@ -14,8 +14,8 @@ LTCvocabulary V_fixed {
     type DoorState constructed from {Closed, Open}		// A set of possible states of the elevator’s doors
 	
     // Fluents
-    ElPosition(Time):Floor				// The floor of the elevator at time point t
-    ElDoorState(Time):DoorState			// The state of the elevator’s doors at time point t
+    ElPosition(Time): Floor				// The floor of the elevator at time point t
+    ElDoorState(Time): DoorState		// The state of the elevator’s doors at time point t
     UnansweredRequest(Time, Floor)		// Denotes that there is an unanswered request at floor f at time point t
     
     // Actions
@@ -28,6 +28,27 @@ LTCvocabulary V_fixed {
 LTCvocabulary V_student {
     extern vocabulary V_fixed
     
+    type Direction constructed from {Up, Down}
+    
+    type DoorAction constructed from {Open, Close}
+    
+    // Move(t, dir) is true iff the elevator starts moving in the direction dir at time t.
+    Move(Time, Direction)
+    
+    // ChangeDoorState(t, doorAction) is true iff the elevator changes the state of its doors at time t.
+    ChangeDoorState(Time, DoorAction)
+    
+    I_ElPosition(Floor)
+    C_ElPosition(Time, Floor)
+    Cn_ElPosition(Time, Floor)
+    
+    I_ElDoorState(DoorState)
+    C_ElDoorState(Time, DoorState)
+    Cn_ElDoorState(Time, DoorState)
+    
+    I_UnansweredRequest(Floor)
+    C_UnansweredRequest(Time, Floor)
+    Cn_UnansweredRequest(Time, Floor)
 }
 
 // TIME THEORY
@@ -43,8 +64,42 @@ Theory T_fixed : V_student {
 
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
-Theory T_student:V_student {
-	
+Theory T_student: V_student {
+    // The elevator can only move when the doors are closed.
+	! t[Time] dir[Direction]: Move(t, dir) => ElDoorState(t) = Closed.
+    
+    // There's not basement
+    ! t[Time]: Move(t, Down) => ElPosition(t) ~= 0.
+    
+    // The elevator can't move through the roof
+    ! t[Time]: Move(t, Up) => ElPosition(t) ~= MAX.
+    
+    I_ElPosition(0).
+    
+    I_ElDoorState(Closed).
+    
+    
+    // ElPosition inertia.
+    {
+        ! f[Floor]: ElPosition(Start) = f <- I_ElPosition(f). // TODO: this isn't actually specified in the assignment.
+        ! t[Time] f[Floor]: ElPosition(Next(t)) = f <- C_ElPosition(t, f).
+        ! t[Time] f[Floor]: ElPosition(Next(t)) = f <- ElPosition(t) = f & ~Cn_ElPosition(t, f).
+    }
+    
+    // ElDoorState inertia.
+    {
+        // In the first time step the doors should be closed.
+        ! ds[DoorState]: ElDoorState(Start) = ds <- I_ElDoorState(ds).
+        ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- C_ElDoorState(t, ds).
+        ! t[Time] ds[DoorState]: ElDoorState(Next(t)) = ds <- ElDoorState(t) = ds & ~Cn_ElDoorState(t, ds).
+    }
+    
+    // UnansweredRequest inertia
+    {
+        ! f[Floor]: UnansweredRequest(Start, f) <- I_UnansweredRequest(f).
+        ! t[Time] f[Floor]: UnansweredRequest(Next(t), f) <- C_UnansweredRequest(t, f).
+        ! t[Time] f[Floor]: UnansweredRequest(Next(t), f) <- UnansweredRequest(t, f) & ~Cn_UnansweredRequest(t, f).
+    }
 }
 
 

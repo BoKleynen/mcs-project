@@ -120,6 +120,12 @@ Theory T_student: V_student {
         ! t[Time] f[Floor]: UnansweredRequest(Next(t), f) <- C_UnansweredRequest(t, f).
         ! t[Time] f[Floor]: UnansweredRequest(Next(t), f) <- UnansweredRequest(t, f) & ~Cn_UnansweredRequest(t, f).
     }
+    
+    // UnansweredRequest causes
+    {
+        ! t[Time] f[Floor]: C_UnansweredRequest(t, f) <- MakeRequest(t, f) & ~UnansweredRequest(t, f).
+        ! t[Time] f[Floor]: Cn_UnansweredRequest(t, f) <- ElPosition(t) = f & UnansweredRequest(t, f).
+    }
 }
 
 

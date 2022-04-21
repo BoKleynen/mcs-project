@@ -138,8 +138,7 @@ Theory T_student: V_student {
         ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- CloseDoors(t).
         
         ! t[Time] f[Floor] ds[DoorState]: Cn_ElDoorState(t, ds) <- ChangeDoorState(t).
-	}
-    
+	}   
     
     // UnansweredRequest inertia
     {
@@ -151,12 +150,14 @@ Theory T_student: V_student {
     // UnansweredRequest causes
     {
         ! t[Time] f[Floor]: C_UnansweredRequest(t, f) <- MakeRequest(t, f) & ~UnansweredRequest(t, f).
+        
+        // UnansweredRequests are answered by closing the doors.
         ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- CloseDoors(t).
     }
     
-    
     // Direction inertia
     {
+        // No initial direction.
         ! t[Time] dir[Direction]: Direction(Next(t), dir) <- C_Direction(t, dir).
         ! t[Time] dir[Direction]: Direction(Next(t), dir) <- Direction(t, dir) & ~Cn_Direction(t, dir).
     }

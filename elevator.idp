@@ -172,7 +172,7 @@ Theory T_student: V_student {
         ! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & 
         	(
         		? f1[Floor]: MakeRequestAbove(t, f1)
-        		& (! f2[Floor]: UnansweredRequestBelow(t+1, f2) => f1 - ElPosition(t+1) =< ElPosition(t+1) - f2)
+        		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
         	).
         ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) & 
         	(
@@ -182,7 +182,7 @@ Theory T_student: V_student {
         ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) &
         	(
         		? f1[Floor]: MakeRequestBelow(t, f1)
-        		& (! f2[Floor]: UnansweredRequestAbove(t+1, f2) => ElPosition(t+1) - f1 < f2 - ElPosition(t+1))
+        		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
         	).
         
       	! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: UnansweredRequestAbove(t, f) | MakeRequestAbove(t, f)).
@@ -214,18 +214,36 @@ Theory T_student: V_student {
     ! t[Time]: ChangeDoorState(t) <=> UnansweredRequest(t, ElPosition(t)).
 }
 
+// If elevator moves the doors are closed!
+theory move_inv : V_student {
+    ! t[Time]: Move(t) => ElDoorState(t) = Closed.
+}
+
+//Doors are never open if there is no call waiting on that floor!
+theory door_inv : V_student { 
+    ! t[Time]: ~UnansweredRequest(t, ElPosition(t)) => ElDoorState(t) = Closed.
+}
+
+Structure S_Inv : V_student { 
+    Time = {0..20}
+	Floor = {0..5}
+	Start = 0
+}
+
+procedure proveInvariants() {
+	print(isinvariant(T_student , move_inv , S_Inv)) 
+    print(isinvariant(T_student , door_inv , S_Inv))
+}
+
 // MAIN PROCEDURE
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
+    proveInvariants()
+    
     local CompleteTheory = merge(T_fixed, T_student) 
-    local s = S5
     
-   	explainunsat(CompleteTheory, s)
-    
-    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, s)
-     
-    
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures) 
+    model = onemodel(CompleteTheory, S7)
     // Printing model 
     print(model)
 

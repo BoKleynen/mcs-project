@@ -118,8 +118,8 @@ Theory T_student: V_student {
     
     // ElPosition causes
     {
-        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & MovingUp(t).
-        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & MovingDown(t).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & (MovingUp(t) | C_Direction(t, Up)).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & (MovingDown(t) | C_Direction(t, Down)).
         
         ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- Move(t).
     }
@@ -169,19 +169,9 @@ Theory T_student: V_student {
         		? f1[Floor]: UnansweredRequestAbove(t, f1)
         		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
         	).
-        ! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & 
-        	(
-        		? f1[Floor]: MakeRequestAbove(t, f1)
-        		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
-        	).
         ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) & 
         	(
         		? f1[Floor]: UnansweredRequestBelow(t, f1)
-        		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
-        	).
-        ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) &
-        	(
-        		? f1[Floor]: MakeRequestBelow(t, f1)
         		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
         	).
         
@@ -243,7 +233,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures) 
-    model = onemodel(CompleteTheory, S7)
+    model = onemodel(CompleteTheory, S5)
     // Printing model 
     print(model)
 

@@ -37,7 +37,7 @@ LTCvocabulary V_student {
     ChangeDoorState(Time)
     CloseDoors(Time)
     
-    NewDirection(Time, Direction)
+    NewDirection(Time): Direction
     
     Direction(Time, Direction)
     
@@ -74,14 +74,13 @@ Theory T_fixed : V_student {
 Theory T_student: V_student {
     // Definition of NewDirection(Time): Direction
     {
-        ! t[Time]: NewDirection(t, Up) <- 
+        ! t[Time]: NewDirection(t) = Up <- 
         	// There is a request for a floor above the current floor
         	? f1[Floor]: UnansweredRequest(t, f1) & f1 > ElPosition(t) & 
         	// All floors below the current floor are further away than this floor.
-            (! f2[Floor]: UnansweredRequest(t, f2) & f2 < ElPosition(t) => f1 - ElPosition(t) =< ElPosition(t) - f2).     
-        ! t[Time]: NewDirection(t, Down) <- ~NewDirection(t, Up).
-        	//? f1[Floor]: UnansweredRequest(t, f1) & f1 < ElPosition(t) &
-            //(! f2[Floor]: UnansweredRequest(t, f2) & f2 > ElPosition(t) => f1 - ElPosition(t) > ElPosition(t) - f2).
+            (! f2[Floor]: UnansweredRequest(t, f2) & f2 < ElPosition(t) => f1 - ElPosition(t) =< ElPosition(t) - f2).
+        // When the NewDirection isn't up, it must be down.
+        ! t[Time]: NewDirection(t) = Down <- NewDirection(t) ~= Up.
     }
     
     // Some syntactic sugar
@@ -150,11 +149,11 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-      ! t[Time]: C_Direction(t, Up) <- NewDirection(t, Up).
-      ! t[Time]: C_Direction(t, Down) <- NewDirection(t, Down).
+        ! t[Time]: C_Direction(t, NewDirection(t)) <- Direction(t, Up) & ~(? f[Floor]: UnansweredRequest(t+1, f) & f > ElPosition(t)).
+        ! t[Time]: C_Direction(t, NewDirection(t)) <- Direction(t, Down) & ~(? f[Floor]: UnansweredRequest(t+1, f) & f < ElPosition(t)).
         
-     // ! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: f > ElPosition(t) & UnansweredRequest(t+1, f)).
-      //! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: f < ElPosition(t) & UnansweredRequest(t+1, f)).
+      ! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: f > ElPosition(t) & UnansweredRequest(t+1, f)).
+      ! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: f < ElPosition(t) & UnansweredRequest(t+1, f)).
     }
     
     // PRECONDITIONS.

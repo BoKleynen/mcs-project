@@ -32,17 +32,23 @@ LTCvocabulary V_student {
     
     type Action constructed from {Move, ChangeDoorState}
     
+    // Fluens
+    Direction(Time, Direction)
+    
+    
+    // Actions
 	do(Time, Action)
     Move(Time)
     ChangeDoorState(Time)
     CloseDoors(Time)
     OpenDoors(Time)
     
-    Direction(Time, Direction)
-    MovingDown(Time)
-    MovingUp(Time)
-    
+    // CanChangeDirection(t) is true iff can change direction.
     CanChangeDirection(Time)
+    // MovingDown(t) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+    MovingDown(Time)
+    // MovingUp(t) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+    MovingUp(Time)
     
     UnansweredRequestAbove(Time, Floor)
     UnansweredRequestBelow(Time, Floor)
@@ -62,6 +68,7 @@ LTCvocabulary V_student {
     C_UnansweredRequest(Time, Floor)
     Cn_UnansweredRequest(Time, Floor)
     
+    // No need to specify an initial direction.
     C_Direction(Time, Direction)
     Cn_Direction(Time, Direction)
 }
@@ -100,7 +107,7 @@ Theory T_student: V_student {
     
     // In the first time step there can be no unanswered requests.
     ! f[Floor]: ~I_UnansweredRequest(f).
-    
+  
     
     // ElPosition inertia.
     {
@@ -111,8 +118,8 @@ Theory T_student: V_student {
     
     // ElPosition causes
     {
-        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & Direction(t, Up).
-        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & Direction(t, Down).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & MovingUp(t).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & MovingDown(t).
         
         ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- Move(t).
     }
@@ -177,15 +184,8 @@ Theory T_student: V_student {
         		& (! f2[Floor]: UnansweredRequestAbove(t+1, f2) => ElPosition(t+1) - f1 < f2 - ElPosition(t+1))
         	).
         
-      	! t[Time]: Cn_Direction(t, Up) <- 
-        	MovingUp(t) 
-        	& ~(? f[Floor]: UnansweredRequestAbove(t, f))
-        	& ~(? f[Floor]: MakeRequestAbove(t, f)).
-    	! t[Time]: Cn_Direction(t, Down) <- 
-        	MovingDown(t) 
-        	& ~(? f[Floor]: UnansweredRequestBelow(t, f))
-        
-        & ~(? f[Floor]: MakeRequestBelow(t, f)).
+      	! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: UnansweredRequestAbove(t, f) | MakeRequestAbove(t, f)).
+    	! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: UnansweredRequestBelow(t, f) | MakeRequestBelow(t, f)).
     }
     
     
@@ -194,9 +194,9 @@ Theory T_student: V_student {
         // Elevetor wasn't responding to requests
         ! t[Time]: CanChangeDirection(t) <- ! dir[Direction]: ~Direction(t, dir).
         // Elevator can no longer go up.
-        ! t[Time]: CanChangeDirection(t) <- Cn_Direction(t, Up).
+        ! t[Time]: CanChangeDirection(t) <- MovingUp(t) & Cn_Direction(t, Up).
         // Elevator can no longer go down.
-        ! t[Time]: CanChangeDirection(t) <- Cn_Direction(t, Down).
+        ! t[Time]: CanChangeDirection(t) <- MovingDown(t) & Cn_Direction(t, Down).
     }
     
     
@@ -217,7 +217,7 @@ Theory T_student: V_student {
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
-    local s = S7
+    local s = S5
     
    	explainunsat(CompleteTheory, s)
     

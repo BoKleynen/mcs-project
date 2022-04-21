@@ -128,11 +128,11 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-        ! t[Time]: C_Direction(t, Up) <- ? f[Floor]: UnansweredRequest(t, f) & f > ElPosition(t).
-        ! t[Time]: C_Direction(t, Down) <- ? f[Floor]: UnansweredRequest(t, f) & f < ElPosition(t).
+        ! t[Time]: C_Direction(t, Up) <- min { f[Floor] : UnansweredRequest(t, f) & f > ElPosition(t) : f - ElPosition(t)} =< min { f[Floor] : UnansweredRequest(t, f) & f < ElPosition(t) : ElPosition(t) - f }.
+        ! t[Time]: C_Direction(t, Down) <- ~C_Direction(t, Up).
         
-        //! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f < ElPosition(t).
-        //! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f > ElPosition(t).
+        ! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f =< ElPosition(t).
+        ! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f >= ElPosition(t).
     }
     
     // Don't move with open doors.
@@ -151,10 +151,10 @@ Theory T_student: V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
-   explainunsat(CompleteTheory, S1)
+   // explainunsat(CompleteTheory, S1)
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, S1)
+    model = onemodel(CompleteTheory, S3)
     
     
     // Printing model 

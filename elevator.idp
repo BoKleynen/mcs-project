@@ -129,7 +129,7 @@ Theory T_student: V_student {
     // Direction causes
     {
         ! t[Time]: C_Direction(t, Up) <- ? f[Floor]: UnansweredRequest(t, f) & f > ElPosition(t).
-        // ! t[Time]: C_Direction(t, Down) <- ? f[Floor]: UnansweredRequest(t, f) & f < ElPosition(t).
+        ! t[Time]: C_Direction(t, Down) <- ? f[Floor]: UnansweredRequest(t, f) & f < ElPosition(t).
         
         //! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f < ElPosition(t).
         //! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f > ElPosition(t).
@@ -139,7 +139,7 @@ Theory T_student: V_student {
     ! t[Time]: do(t, Move) => ElDoorState(t) = Closed.
     
     // Only open doors when the elevator is at a floor whith an unanswered request.
-    ! t[Time]: do(t, ChangeDoorState) => UnansweredRequest(t, ElPosition(t)).
+    ! t[Time]: do(t, ChangeDoorState) <=> UnansweredRequest(t, ElPosition(t)).
     
     // perform an action iff there is an unanswered request
     ! t[Time]: (? f[Floor]: UnansweredRequest(t, f)) <=> (? a[Action]: do(t, a)).

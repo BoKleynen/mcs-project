@@ -33,6 +33,11 @@ LTCvocabulary V_student {
     type Action constructed from {Move, ChangeDoorState}
     
 	do(Time, Action)
+    Move(Time)
+    ChangeDoorState(Time)
+    CloseDoors(Time)
+    
+    NewDirection(Time, Direction)
     
     Direction(Time, Direction)
     
@@ -66,7 +71,24 @@ Theory T_fixed : V_student {
 
 // STUDENT THEORY
 // Here you should model the dynamic elevator system
-Theory T_student: V_student {     
+Theory T_student: V_student {
+    // Definition of NewDirection(Time): Direction
+    {
+        ! t[Time]: NewDirection(t, Up) <- 
+        	// There is a request for a floor above the current floor
+        	? f1[Floor]: UnansweredRequest(t, f1) & f1 > ElPosition(t) & 
+        	// All floors below the current floor are further away than this floor.
+            (! f2[Floor]: UnansweredRequest(t, f2) & f2 < ElPosition(t) => f1 - ElPosition(t) =< ElPosition(t) - f2).     
+        ! t[Time]: NewDirection(t, Down) <- ~NewDirection(t, Up).
+        	//? f1[Floor]: UnansweredRequest(t, f1) & f1 < ElPosition(t) &
+            //(! f2[Floor]: UnansweredRequest(t, f2) & f2 > ElPosition(t) => f1 - ElPosition(t) > ElPosition(t) - f2).
+    }
+    
+    // Some syntactic sugar
+    ! t[Time]: Move(t) <=> do(t, Move).
+    ! t[Time]: ChangeDoorState(t) <=> do(t, ChangeDoorState).
+    ! t[Time]: CloseDoors(t) <=> ChangeDoorState(t) & ElDoorState(t) = Open.
+    
     // In the first time step the elevator is at the bottom floor
     I_ElPosition(MIN).
     
@@ -85,10 +107,10 @@ Theory T_student: V_student {
     
     // Position causes
     {
-        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- do(t, Move) & Direction(t, Up).
-        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- do(t, Move) & Direction(t, Down).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & Direction(t, Up).
+        ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & Direction(t, Down).
         
-        ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- do(t, Move).
+        ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- Move(t).
     }
     
     // ElDoorState inertia.
@@ -100,10 +122,10 @@ Theory T_student: V_student {
     
     // DoorState causes
     {
-        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- do(t, ChangeDoorState) & ElDoorState(t) = Closed.
-        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- do(t, ChangeDoorState) & ElDoorState(t) = Open.
+        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- ChangeDoorState(t) & ElDoorState(t) = Closed.
+        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- ChangeDoorState(t) & ElDoorState(t) = Open.
         
-        ! t[Time] f[Floor] ds[DoorState]: Cn_ElDoorState(t, ds) <- do(t, ChangeDoorState).
+        ! t[Time] f[Floor] ds[DoorState]: Cn_ElDoorState(t, ds) <- ChangeDoorState(t).
 	}
     
     // UnansweredRequest inertia
@@ -116,7 +138,7 @@ Theory T_student: V_student {
     // UnansweredRequest causes
     {
         ! t[Time] f[Floor]: C_UnansweredRequest(t, f) <- MakeRequest(t, f) & ~UnansweredRequest(t, f).
-        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- ElDoorState(t) = Open.
+        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- ChangeDoorState(t) & ElDoorState(t) = Open.
     }
     
     // Direction inertia
@@ -128,22 +150,26 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-        ! t[Time]: C_Direction(t, Up) <- min { f[Floor] : UnansweredRequest(t, f) & f > ElPosition(t) : f - ElPosition(t)} =< min { f[Floor] : UnansweredRequest(t, f) & f < ElPosition(t) : ElPosition(t) - f }.
-        ! t[Time]: C_Direction(t, Down) <- ~C_Direction(t, Up).
+      ! t[Time]: C_Direction(t, Up) <- NewDirection(t, Up).
+      ! t[Time]: C_Direction(t, Down) <- NewDirection(t, Down).
         
-        ! t[Time]: Cn_Direction(t, Up) <- ! f[Floor]: UnansweredRequest(t, f) => f =< ElPosition(t).
-        ! t[Time]: Cn_Direction(t, Down) <- ! f[Floor]: UnansweredRequest(t, f) => f >= ElPosition(t).
+     // ! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: f > ElPosition(t) & UnansweredRequest(t+1, f)).
+      //! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: f < ElPosition(t) & UnansweredRequest(t+1, f)).
     }
     
-    // Don't move with open doors.
-    ! t[Time]: do(t, Move) => ElDoorState(t) = Closed.
+    // PRECONDITIONS.
     
-    // Only open doors when the elevator is at a floor whith an unanswered request.
-    ! t[Time]: do(t, ChangeDoorState) <=> UnansweredRequest(t, ElPosition(t)).
+    // Don't move with open doors.
+    ! t[Time]: Move(t) => ElDoorState(t) = Closed.
     
     // perform an action iff there is an unanswered request
     ! t[Time]: (? f[Floor]: UnansweredRequest(t, f)) <=> (? a[Action]: do(t, a)).
     
+    // Change doorstate iff the elevator is at a requested floor.
+    // -> The elevator will open its doors when it arrives
+    // -> The elevator will close its doors when they are open since a request is 
+    //    only considered answered once the doors are closed again.
+    ! t[Time]: ChangeDoorState(t) <=> UnansweredRequest(t, ElPosition(t)).
 }
 
 // MAIN PROCEDURE
@@ -151,11 +177,9 @@ Theory T_student: V_student {
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
-   // explainunsat(CompleteTheory, S1)
-    
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)                                
-    model = onemodel(CompleteTheory, S3)
-    
+    model = onemodel(CompleteTheory, S5)
+     
     
     // Printing model 
     print(model)

@@ -36,10 +36,13 @@ LTCvocabulary V_student {
     Move(Time)
     ChangeDoorState(Time)
     CloseDoors(Time)
+    OpenDoors(Time)
     
     Direction(Time, Direction)
     MovingDown(Time)
     MovingUp(Time)
+    
+    CanChangeDirection(Time)
     
     UnansweredRequestAbove(Time, Floor)
     UnansweredRequestBelow(Time, Floor)
@@ -81,8 +84,13 @@ Theory T_student: V_student {
     ! t[Time]: Move(t) <=> do(t, Move).
     ! t[Time]: ChangeDoorState(t) <=> do(t, ChangeDoorState).
     ! t[Time]: CloseDoors(t) <=> ChangeDoorState(t) & ElDoorState(t) = Open.
+    ! t[Time]: OpenDoors(t) <=> ChangeDoorState(t) & ElDoorState(t) = Closed.
     ! t[Time]: MovingDown(t) <=> Direction(t, Down).
     ! t[Time]: MovingUp(t) <=> Direction(t, Up).
+    ! t[Time] f[Floor]: UnansweredRequestAbove(t, f) <=> UnansweredRequest(t, f) & f > ElPosition(t).
+    ! t[Time] f[Floor]: UnansweredRequestBelow(t, f) <=> UnansweredRequest(t, f) & f < ElPosition(t).
+    ! t[Time] f[Floor]: MakeRequestAbove(t, f) <=> MakeRequest(t, f) & f > ElPosition(t).
+    ! t[Time] f[Floor]: MakeRequestBelow(t, f) <=> MakeRequest(t, f) & f < ElPosition(t).
     
     // In the first time step the elevator is at the bottom floor
     I_ElPosition(MIN).
@@ -93,6 +101,7 @@ Theory T_student: V_student {
     // In the first time step there can be no unanswered requests.
     ! f[Floor]: ~I_UnansweredRequest(f).
     
+    
     // ElPosition inertia.
     {
         ! f[Floor]: ElPosition(Start) = f <- I_ElPosition(f).
@@ -100,13 +109,14 @@ Theory T_student: V_student {
         ! t[Time] f[Floor]: ElPosition(Next(t)) = f <- ElPosition(t) = f & ~Cn_ElPosition(t, f).
     }
     
-    // Position causes
+    // ElPosition causes
     {
         ! t[Time]: C_ElPosition(t, ElPosition(t)+1) <- Move(t) & Direction(t, Up).
         ! t[Time]: C_ElPosition(t, ElPosition(t)-1) <- Move(t) & Direction(t, Down).
         
         ! t[Time] dir[Direction]: Cn_ElPosition(t, ElPosition(t)) <- Move(t).
     }
+    
     
     // ElDoorState inertia.
     {
@@ -117,11 +127,12 @@ Theory T_student: V_student {
     
     // DoorState causes
     {
-        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- ChangeDoorState(t) & ElDoorState(t) = Closed.
-        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- ChangeDoorState(t) & ElDoorState(t) = Open.
+        ! t[Time] f[Floor]: C_ElDoorState(t, Open) <- OpenDoors(t).
+        ! t[Time] f[Floor]: C_ElDoorState(t, Closed) <- CloseDoors(t).
         
         ! t[Time] f[Floor] ds[DoorState]: Cn_ElDoorState(t, ds) <- ChangeDoorState(t).
 	}
+    
     
     // UnansweredRequest inertia
     {
@@ -133,8 +144,9 @@ Theory T_student: V_student {
     // UnansweredRequest causes
     {
         ! t[Time] f[Floor]: C_UnansweredRequest(t, f) <- MakeRequest(t, f) & ~UnansweredRequest(t, f).
-        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- ChangeDoorState(t) & ElDoorState(t) = Open.
+        ! t[Time]: Cn_UnansweredRequest(t, ElPosition(t)) <- CloseDoors(t).
     }
+    
     
     // Direction inertia
     {
@@ -144,31 +156,49 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-    	! t[Time]: C_Direction(t, Up) <-
-        	? f1[Floor]: UnansweredRequestAbove(t, f1)
-        	& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2).
-        ! t[Time]: C_Direction(t, Up) <-
-        	? f1[Floor]:MakeRequestAbove(t, f1)
-        	& (! f2[Floor]: UnansweredRequestBelow(t+1, f2) => f1 - ElPosition(t+1) =< ElPosition(t+1) - f2).
-        ! t[Time]: C_Direction(t, Down) <- 
-        	? f1[Floor]: UnansweredRequestBelow(t, f1)
-        	& (! f2[Floor]: UnansweredRequestAbove(t, f2) => f1 - ElPosition(t) < ElPosition(t) - f2).
-        ! t[Time]: C_Direction(t, Down) <- 
-        	? f1[Floor]: MakeRequestBelow(t, f1)
-        	& (! f2[Floor]: UnansweredRequestAbove(t+1, f2) => f1 - ElPosition(t+1) < ElPosition(t+1) - f2).
+    	! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & 
+        	(
+        		? f1[Floor]: UnansweredRequestAbove(t, f1)
+        		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
+        	).
+        ! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & 
+        	(
+        		? f1[Floor]: MakeRequestAbove(t, f1)
+        		& (! f2[Floor]: UnansweredRequestBelow(t+1, f2) => f1 - ElPosition(t+1) =< ElPosition(t+1) - f2)
+        	).
+        ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) & 
+        	(
+        		? f1[Floor]: UnansweredRequestBelow(t, f1)
+        		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
+        	).
+        ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) &
+        	(
+        		? f1[Floor]: MakeRequestBelow(t, f1)
+        		& (! f2[Floor]: UnansweredRequestAbove(t+1, f2) => ElPosition(t+1) - f1 < f2 - ElPosition(t+1))
+        	).
         
-      	! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: UnansweredRequestAbove(t, f) | MakeRequestAbove(t, f)).
-    	! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: UnansweredRequestBelow(t, f) | MakeRequestBelow(t, f)).
+      	! t[Time]: Cn_Direction(t, Up) <- 
+        	MovingUp(t) 
+        	& ~(? f[Floor]: UnansweredRequestAbove(t, f))
+        	& ~(? f[Floor]: MakeRequestAbove(t, f)).
+    	! t[Time]: Cn_Direction(t, Down) <- 
+        	MovingDown(t) 
+        	& ~(? f[Floor]: UnansweredRequestBelow(t, f))
+        
+        & ~(? f[Floor]: MakeRequestBelow(t, f)).
     }
     
     
-    ! t[Time] f[Floor]: UnansweredRequestAbove(t, f) <=> UnansweredRequest(t, f) & f > ElPosition(t).
+    // CanChangeDirection definition
+    {
+        // Elevetor wasn't responding to requests
+        ! t[Time]: CanChangeDirection(t) <- ! dir[Direction]: ~Direction(t, dir).
+        // Elevator can no longer go up.
+        ! t[Time]: CanChangeDirection(t) <- Cn_Direction(t, Up).
+        // Elevator can no longer go down.
+        ! t[Time]: CanChangeDirection(t) <- Cn_Direction(t, Down).
+    }
     
-    ! t[Time] f[Floor]: UnansweredRequestBelow(t, f) <=> UnansweredRequest(t, f) & f < ElPosition(t).
-    
-    ! t[Time] f[Floor]: MakeRequestAbove(t, f) <=> MakeRequest(t, f) & f > ElPosition(t).
-    
-    ! t[Time] f[Floor]: MakeRequestBelow(t, f) <=> MakeRequest(t, f) & f < ElPosition(t).
     
     // Don't move with open doors.
     ! t[Time]: Move(t) => ElDoorState(t) = Closed.
@@ -187,7 +217,7 @@ Theory T_student: V_student {
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
-    local s = S6
+    local s = S7
     
    	explainunsat(CompleteTheory, s)
     

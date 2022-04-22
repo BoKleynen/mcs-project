@@ -241,12 +241,12 @@ procedure proveInvariants() {
 // If you have to change the main procedure for debugging purposes, be careful and restore it back once you finish debugging.
 procedure main() {
     proveInvariants()
-    
-    local CompleteTheory = merge(T_fixed, T_student) 
-    
-    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures) 
-    model = onemodel(CompleteTheory, S6)
-    // Printing model 
+    local CompleteTheory = merge(T_fixed, T_student)
+
+    // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)
+    model = onemodel(CompleteTheory, S5)
+
+    // Printing model
     print(model)
 
     // Visualization

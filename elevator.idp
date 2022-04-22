@@ -32,15 +32,19 @@ LTCvocabulary V_student {
     
     type Action constructed from {Move, ChangeDoorState}
     
-    // Fluens
+    // Fluents
     Direction(Time, Direction)
     
-    
     // Actions
+    // Denotes that an action a is performed at time t.
 	do(Time, Action)
+    // Denotes that the elevator moves at time t.
     Move(Time)
+    // Denotes that the elevator changes its door state at time t.
     ChangeDoorState(Time)
+    // Denotes that the elevator closes its doors at time t.
     CloseDoors(Time)
+    // Denotes that the elevator opens its doors at time t.
     OpenDoors(Time)
     
     // CanChangeDirection(t) is true iff can change direction.
@@ -50,10 +54,18 @@ LTCvocabulary V_student {
     // MovingUp(t) is true iff the elevator is answering requests above ElPosition(t) at time point t.
     MovingUp(Time)
     
+    // Denotes that there is an unanswered request at floor f at time point t
+    // and that floor f is above the current floor.
     UnansweredRequestAbove(Time, Floor)
+    // Denotes that there is an unanswered request at floor f at time point t
+    // and that floor f is below the current floor.
     UnansweredRequestBelow(Time, Floor)
     
+    // Denotes that a request is made for floor f at time point t
+    // and that floor f is above the current floor.
     MakeRequestAbove(Time, Floor)
+    // Denotes that a request is made for floor f at time point t
+    // and that floor f is below the current floor.
     MakeRequestBelow(Time, Floor)
     
     I_ElPosition(Floor)
@@ -194,9 +206,9 @@ Theory T_student: V_student {
     // Don't move with open doors.
     ! t[Time]: Move(t) => ElDoorState(t) = Closed.
     
-    // perform an action iff there is an unanswered request
-    ! t[Time]: (? f[Floor]: UnansweredRequest(t, f)) <=> (? a[Action]: do(t, a)).
-    
+    // perform exactly one action iff there is an unanswered request
+    ! t[Time]: (? f[Floor]: UnansweredRequest(t, f)) <=> (?=1 a[Action]: do(t, a)).
+        
     // Change doorstate iff the elevator is at a requested floor.
     // -> The elevator will open its doors when it arrives
     // -> The elevator will close its doors when they are open since a request is 
@@ -233,7 +245,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student) 
     
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures) 
-    model = onemodel(CompleteTheory, S5)
+    model = onemodel(CompleteTheory, S6)
     // Printing model 
     print(model)
 

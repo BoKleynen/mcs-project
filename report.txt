@@ -1,0 +1,29 @@
+// Fluents
+Direction(Time, Direction) is true iff the elevator is moving in direction dir at time t.
+do(Time, Action) is true iff the elevator performs action a at time t.
+Move(Time) is true iff the elevator moves at time t.
+ChangeDoorState(Time) is true iff the elevator changes its door state at time t.
+CloseDoors(Time) is true iff the elevator closes its doors at time t.
+OpenDoors(Time) is true iff the elevator opens its doors at time t.
+CanChangeDirection(Time) is true iff the elevator can start moving in a new direction at time t.
+MovingDown(Time) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+MovingUp(Time) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+UnansweredRequestAbove(Time, Floor) is true iff there is an unanswered request at floor f at time point t and that floor f is above the current floor
+UnansweredRequestBelow(Time, Floor) is true iff there is an unanswered request at floor f at time point t and that floor f is below the current floor.
+MakeRequestAbove(Time, Floor) is true iff a request is made for floor f at time point t and that floor f is above the current floor.
+MakeRequestBelow(Time, Floor) is true iff a request is made for floor f at time point t and that floor f is below the current floor.
+I_ElPosition(Floor) is true iff the elevator is at floor f at time 0.
+C_ElPosition(Time, Floor) is true iff the elevator will be at floor f at time t+1
+Cn_ElPosition(Time, Floor) is true iff the elevator will no longer be at floor f at time t+1
+I_ElDoorState(DoorState) is true iff the elevator doors are in door state ds at time 0.
+C_ElDoorState(Time, DoorState) is true iff the elevators doors will be in door state ds at time t+1
+Cn_ElDoorState(Time, DoorState) is true iff the elevators doors will no longer be in door state ds at time t+1
+I_UnansweredRequest(Floor) is true iff there is an unanswered request at floor f at time 0.
+C_UnansweredRequest(Time, Floor) is true iff there will be an unanswered request at time t+1.
+Cn_UnansweredRequest(Time, Floor) is true iff there will be no unanswered request at floor f at time t+1.
+C_Direction(Time, Direction) is true iff the elevator will be moving in direction dir at time t+1.
+Cn_Direction(Time, Direction) is true iff the elevator will no longer be moving in direction dir at time t+1.
+
+approximate time spent: 15 hours
+
+Major revision: yes (although I woul call it a minor refactor since it was only in the definition of 2 predicates, because one of them was defined in terms of t+1)

@@ -176,12 +176,23 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-    	! t[Time]: C_Direction(t, Up) <- Move(t) & CanChangeDirection(t) & 
+    	! t[Time]: C_Direction(t, Up) <- 
+        	// Only change direction when the elevator actually moves
+        	Move(t) & 
+        	// The elevator can't arbitrarily change direction
+        	CanChangeDirection(t) & 
+        	// Check that there is no requested floor below the current floor that is closer.
         	(
         		? f1[Floor]: UnansweredRequestAbove(t, f1)
         		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
         	).
-        ! t[Time]: C_Direction(t, Down) <- Move(t) &  CanChangeDirection(t) & 
+        ! t[Time]: C_Direction(t, Down) <- 
+	        // Only change direction when the elevator actually moves
+        	Move(t) &  
+	        // The elevator can't arbitrarily change direction
+        	CanChangeDirection(t) & 
+	        // Check that there is no requested floor abvoe the current floor that is closer or the 
+        	// same distance.
         	(
         		? f1[Floor]: UnansweredRequestBelow(t, f1)
         		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))

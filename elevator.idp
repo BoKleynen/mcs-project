@@ -49,9 +49,9 @@ LTCvocabulary V_student {
     
     // CanChangeDirection(t) is true iff can change direction.
     CanChangeDirection(Time)
-    // MovingDown(t) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+    // MovingDown(t) is true iff the elevator was answering requests above ElPosition(t-1) at time point t.
     MovingDown(Time)
-    // MovingUp(t) is true iff the elevator is answering requests above ElPosition(t) at time point t.
+    // MovingUp(t) is true iff the elevator was answering requests above ElPosition(t-1) at time point t.
     MovingUp(Time)
     
     // Denotes that there is an unanswered request at floor f at time point t
@@ -186,6 +186,8 @@ Theory T_student: V_student {
         		? f1[Floor]: UnansweredRequestBelow(t, f1)
         		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
         	).
+        // Edgecase: When the elevator wasn't moving and we make a request for its current floor, we will be moving up.
+        ! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & UnansweredRequest(t, ElPosition(t)) & ElDoorState(t) = Closed.
         
       	! t[Time]: Cn_Direction(t, Up) <- ~(? f[Floor]: UnansweredRequestAbove(t, f) | MakeRequestAbove(t, f)).
     	! t[Time]: Cn_Direction(t, Down) <- ~(? f[Floor]: UnansweredRequestBelow(t, f) | MakeRequestBelow(t, f)).

@@ -244,7 +244,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student)
 
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)
-    model = onemodel(CompleteTheory, S5)
+    model = onemodel(CompleteTheory, S8)
 
     // Printing model
     print(model)

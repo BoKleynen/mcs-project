@@ -176,12 +176,12 @@ Theory T_student: V_student {
     
     // Direction causes
     {
-    	! t[Time]: C_Direction(t, Up) <- CanChangeDirection(t) & 
+    	! t[Time]: C_Direction(t, Up) <- Move(t) & CanChangeDirection(t) & 
         	(
         		? f1[Floor]: UnansweredRequestAbove(t, f1)
         		& (! f2[Floor]: UnansweredRequestBelow(t, f2) => f1 - ElPosition(t) =< ElPosition(t) - f2)
         	).
-        ! t[Time]: C_Direction(t, Down) <- CanChangeDirection(t) & 
+        ! t[Time]: C_Direction(t, Down) <- Move(t) &  CanChangeDirection(t) & 
         	(
         		? f1[Floor]: UnansweredRequestBelow(t, f1)
         		& (! f2[Floor]: UnansweredRequestAbove(t, f2) => ElPosition(t) - f1 < f2 - ElPosition(t))
@@ -244,7 +244,7 @@ procedure main() {
     local CompleteTheory = merge(T_fixed, T_student)
 
     // Change the structure name to try other structures (check the included file "structures.idp" for available provided structures, and feel free to add additional structures)
-    model = onemodel(CompleteTheory, S8)
+    model = onemodel(CompleteTheory, S9)
 
     // Printing model
     print(model)

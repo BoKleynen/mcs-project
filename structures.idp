@@ -58,6 +58,14 @@ Structure S8:V_student {
     MakeRequest = {0, 4; 7,4; 9, 2; 9, 7}
 }
 
+Structure S9:V_student {
+    Time = {0..20}
+    Floor = {0..7}
+    MakeRequest = {0, 4; 8,4; 9, 2; 9, 7; 10, 6}
+}
+
+
+
 
 // Feel free to add your own structures here:
 
